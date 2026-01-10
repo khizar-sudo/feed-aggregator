@@ -24,6 +24,10 @@ func main() {
 
 	//initialise database and state (pointer to config and database)
 	db, err := sql.Open("postgres", cfg.DbUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 	dbQueries := database.New(db)
 	s := state{
 		cfg: &cfg,
