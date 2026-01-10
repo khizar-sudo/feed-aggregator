@@ -1,14 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 
 	"github.com/khizar-sudo/feed-aggregator/internal/config"
+	"github.com/khizar-sudo/feed-aggregator/internal/database"
+	_ "github.com/lib/pq"
 )
 
 type state struct {
 	cfg *config.Config
+	db  *database.Queries
 }
 
 func main() {
@@ -18,9 +22,12 @@ func main() {
 		log.Fatalf("error reading config: %v", err)
 	}
 
-	//initialise state (just a pointer to the config)
+	//initialise database and state (pointer to config and database)
+	db, err := sql.Open("postgres", cfg.DbUrl)
+	dbQueries := database.New(db)
 	s := state{
 		cfg: &cfg,
+		db:  dbQueries,
 	}
 
 	// initialise the map of commands
@@ -28,6 +35,7 @@ func main() {
 		c: make(map[string]func(*state, command) error),
 	}
 	commands.register("login", handlerLogin)
+	commands.register("register", handlerRegister)
 
 	// fetch CLI arguments
 	args := os.Args
