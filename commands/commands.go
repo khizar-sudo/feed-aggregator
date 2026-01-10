@@ -43,7 +43,7 @@ func (c *commands) register(name string, f func(*state, command) error) {
 }
 
 func Init() {
-	// initialise json config
+	// initialise json config (db url and current user name)
 	cfg, err := config.Read()
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
@@ -69,6 +69,7 @@ func Init() {
 	commands.register("register", handlerRegister)
 	commands.register("reset", handlerReset)
 	commands.register("users", handlerUsers)
+	commands.register("agg", handlerAgg)
 
 	// fetch CLI arguments
 	args := os.Args
