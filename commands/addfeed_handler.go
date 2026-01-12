@@ -9,14 +9,9 @@ import (
 	"github.com/khizar-sudo/feed-aggregator/internal/database"
 )
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) < 2 || len(cmd.args) > 2 {
 		return fmt.Errorf("Insufficient arguments!")
-	}
-
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
 	}
 
 	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
@@ -35,6 +30,9 @@ func handlerAddFeed(s *state, cmd command) error {
 		FeedID:    feed.ID,
 		UserID:    user.ID,
 	})
+	if err != nil {
+		return err
+	}
 
 	printFeed(feed, user)
 
