@@ -2,10 +2,14 @@ package commands
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/khizar-sudo/feed-aggregator/feed"
+	"github.com/khizar-sudo/feed-aggregator/internal/database"
 )
 
 func handlerAgg(s *state, cmd command) error {
@@ -41,7 +45,31 @@ func handlerAgg(s *state, cmd command) error {
 
 		fmt.Printf("Channel: %s\n", f.Channel.Title)
 		for _, item := range f.Channel.Item {
-			fmt.Printf("* %s\n", item.Title)
+			publishedAt := sql.NullTime{}
+			if t, err := time.Parse(time.RFC1123Z, item.PubDate); err == nil {
+				publishedAt = sql.NullTime{Time: t, Valid: true}
+			} else {
+				fmt.Printf("Could not parse date: %v\n", item.PubDate)
+			}
+
+			_, err = s.db.CreatePost(context.Background(), database.CreatePostParams{
+				ID:          uuid.New(),
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+				Title:       sql.NullString{String: item.Title, Valid: true},
+				Url:         item.Link,
+				Description: sql.NullString{String: item.Description, Valid: true},
+				PublishedAt: publishedAt,
+				FeedID:      feedToFetch.ID,
+			})
+			if err != nil {
+				if !strings.Contains(err.Error(), "duplicate key") &&
+					!strings.Contains(err.Error(), "unique constraint") {
+					fmt.Println(err.Error())
+				}
+			} else {
+				fmt.Printf("Post added: %s\n", item.Title)
+			}
 		}
 		fmt.Println("=====================================")
 	}
